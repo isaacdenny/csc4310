@@ -6,23 +6,63 @@
  * Compile: nvcc -g matrix-mult-cuda.cu -o matrix-mult-cuda
  * Run ./matrix-mult-cuda <output_file> <input_file_a> <input_file_b>
  */
-#include <cstdio>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 #include <driver_types.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
+// not essential, but thought it might be fun
 struct {
   int n;
   int m;
   int *data;
 } typedef matrix;
 
+/**
+ * helper function for quickly printing out matrix details
+ * pre: no print
+ * post: printed lol
+ */
 void printMatrix(int *a, int n, int m);
+
+/**
+ * Read matrix from file to matrix struct in format below
+ * n m
+ * ... n rows of m length
+ *
+ * pre: a is an initialized matrix struct
+ * post: a is an initialized matrix struct with
+ * n and m set, and the matrix allocated
+ * immediately following data pointer
+ */
 int read_file_to_matrix(char *filename, matrix **a);
+
+/**
+ * Write matrix to file
+ * pre: a is an initialized matrix struct with data allocated
+ * post: a written to file in format below
+ *
+ * n m
+ * ... n rows of m length
+ */
 int write_matrix_to_file(char *filename, matrix *a);
+
+/**
+ * initializes cuda device and memory, calls the kernel, and frees device memory
+ * pre: a, b are initialized matrix structs, c is output
+ * post c is filled with result matrix
+ */
 int multiply_matrices(matrix *a, matrix *b, matrix *c);
+
+/**
+ * kernel to multiply matrix data into resulting matrix c following
+ * matrix multiplication algorithm
+ * pre: a, b, c are initialized, n is row count of a, m is column count of a
+ * and row count of b, p is column count of b
+ * post: c is result matrix
+ */
 __global__ void multiply_matrices_kernel(int *a, int *b, int *c, int n, int m,
                                          int p);
 
@@ -193,8 +233,15 @@ int multiply_matrices(matrix *a, matrix *b, matrix *c) {
   printf(
       "Cuda kernel initialized with dimensions: (%d, %d) and %d, %d blocks\n",
       threadsPerBlock.x, threadsPerBlock.y, blocksInGrid.x, blocksInGrid.y);
+
+  struct timeval t1, t2;
+  double runtime;
+  gettimeofday(&t1, NULL);
   multiply_matrices_kernel<<<blocksInGrid, threadsPerBlock>>>(a_d, b_d, c_d,
                                                               a->n, a->m, b->m);
+  gettimeofday(&t2, NULL);
+  runtime = t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec) / 1.e6;
+  printf("Kernel time: %lf\n", runtime);
 
   err = cudaMemcpy((void *)(c->data), (void *)c_d, sizeof(int) * c->n * c->m,
                    cudaMemcpyDeviceToHost);

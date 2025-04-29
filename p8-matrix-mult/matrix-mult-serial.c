@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 struct {
   int n;
@@ -38,12 +39,19 @@ int main(int argc, char **argv) {
     return 3;
   }
 
+  struct timeval t1, t2;
+  double runtime;
+
   matrix *c = malloc(sizeof(matrix));
+  gettimeofday(&t1, NULL);
   err = multiply_matrices(a, b, c);
   if (err > 0) {
     fprintf(stderr, "Error multiplying matrices: %d\n", err);
     return 4;
   }
+  gettimeofday(&t2, NULL);
+  runtime = t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec) / 1.e6;
+  printf("Multiply time: %lf\n", runtime);
 
   err = write_matrix_to_file(argv[1], c);
   if (err > 0) {

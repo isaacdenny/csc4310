@@ -1,0 +1,2 @@
+1. Cant really compare because version 1 works on ints and version 2 works on floats, as version 1 might be faster just by nature of the time taken to do floating point arithmetic vs int
+2. Yes, tile size makes a difference. The number of global memory accesses are inversely proportional to the tile size. If tile size is 8, we make 1/8 global memory accesses than we would in version 1, so larger tile sizes are better if they can still fit reasonably in the shared memory
